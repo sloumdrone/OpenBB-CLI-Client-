@@ -214,17 +214,17 @@ def list_api(command,target,flags,value):
     }
     try:
         response = make_request(command,target,data)
-        if response['data']['success']:
+        if response['success']:
             print '--- [RESPONSE] >>>>>>\n'
-            for x in response['data']['rows']:
+            for x in response['rows']:
                 spaces = u' ' * (20 - len(x['headline']))
                 if target == 'board':
                     print x['headline'] + spaces + x['body']
                 else:
-                    print str(x['id']) + ' | ' + x['headline'] + ' | ' + x['body']
+                    print 'ID: ' + str(x['id']) + '\n' + x['headline'] + '\n' + x['body'] + '\n'
             print '\n'
         else:
-            for x in response['messages']:
+            for x in response['errors']:
                 print x
     except:
         print 'Unable to communicate with server'
@@ -239,7 +239,7 @@ def set_api(command,target,flags,value):
 
     incoming[target] = value
 
-    print "\nCurrent {}:\n{}\n".format(target,value)
+    print "\nCurrent {}: {}\n".format(target,value)
 
 
 def current(command,target,flags,value):
