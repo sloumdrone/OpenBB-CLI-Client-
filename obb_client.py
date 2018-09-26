@@ -102,6 +102,7 @@ def log_off(command,target,flags,value):
         response = make_request('logoff', None, data)
         if response['success']:
             print '\n{} has been logged off...\n'.format(data['username'])
+
         else:
             for x in response['errors']:
                 print 'ERROR: {}'.format(x)
@@ -121,7 +122,7 @@ def join(command,target,flags,value):
     bio = raw_input('Enter a short bio (optional): ')
     contact = raw_input('Enter contact information (optional): ')
     url = raw_input('Enter a URL for yourself (optional): ')
-    data = {'user': username,'pw': password, 'bio': bio, 'contact': contact,'url': url}
+    data = {'username': username,'password': password, 'bio': bio, 'contact': contact,'url': url}
     try:
         response = make_request('join',None,data)
         if response['success']:
@@ -139,7 +140,7 @@ def delete_user(command,target,flags,value):
     if password == repass:
         verify = raw_input('Are you sure? This cannot be undone (y/n): ')
         if verify.lower() in ['y','yes']:
-            data = {'user': username,'pw':password}
+            data = {'username': username,'password':password}
             try:
                 response = make_request('delete',None,data)
                 if response['success']:
@@ -229,6 +230,7 @@ def list_api(command,target,flags,value):
     except:
         print 'Unable to communicate with server'
 
+
 def set_api(command,target,flags,value):
     if not target:
         print "No target supplied. Nothing set."
@@ -308,9 +310,9 @@ if __name__ == '__main__':
     if not os.path.isfile(udata):
         with open(udata,'w') as f:
             data = {
-                'remote_root': 'localhost:8080',
+                'remote_root': 'http://localhost:8080',
                 'token': '',
-                'user': '',
+                'username': '',
                 'board': None,
                 'topic': None,
                 'post': None
