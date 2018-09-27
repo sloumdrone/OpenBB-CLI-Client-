@@ -1,8 +1,20 @@
 import os.path, json, urllib2, sys
+import os, tempfile
 import getpass
+from subprocess import call
 
 udata = './u.conf.json'
 incoming = ''
+error_dict = {
+    1000: 'oBB ERROR 1000 : Communication error',
+    1001: 'oBB ERROR 1001 : Database not found',
+    1002: 'oBB ERROR 1002 : Bad username, password, or token',
+    1003: 'oBB ERROR 1003 : Database write error, contact server admin',
+    1004: 'oBB ERROR 1004 : Bad query/no matches for provided input',
+    1005: 'oBB ERROR 1005 : Client request format error',
+    1006: 'oBB ERROR 1006 : Invalide command or target',
+    1007: 'No data matches your request\nCheck your settings and try again\n'
+}
 
 
 def make_request(command,target,args):
@@ -91,7 +103,7 @@ def log_on(command,target,flags,value):
             )
         else:
             for x in response['errors']:
-                print 'ERROR: {}'.format(x)
+                print error_dict[x]
     except:
         print 'Unable to communicate with server'
 
@@ -105,7 +117,7 @@ def log_off(command,target,flags,value):
 
         else:
             for x in response['errors']:
-                print 'ERROR: {}'.format(x)
+                print error_dict[x]
     except:
         print 'Unable to communicate with server'
 
@@ -129,17 +141,17 @@ def join(command,target,flags,value):
             print '\nAn account has been created for {}\nPlease log in...'.format(username)
         else:
             for x in response['errors']:
-                print 'ERROR: {}'.format(x)
+                print error_dict[x]
     except:
         print 'Unable to communicate with server'
 
 def delete_user(command,target,flags,value):
-    username = raw_input('\nTo delete your account from the server on file\nplease enter your username: ')
+    username = raw_input('\nTo delete your account from the remote server\nplease enter your username: ')
     password = getpass.getpass('Great. Now enter your password: ')
     repass = getpass.getpass('One more time, just to be safe: ')
     if password == repass:
         verify = raw_input('Are you sure? This cannot be undone (y/n): ')
-        if verify.lower() in ['y','yes']:
+        if verify.lower() in ['y','yes','yeah','yup','ya']:
             data = {'username': username,'password':password}
             try:
                 response = make_request('delete',None,data)
@@ -147,13 +159,14 @@ def delete_user(command,target,flags,value):
                     print '\nThe account for {} has been deleted\n'.format(username)
                 else:
                     for x in response['errors']:
-                        print 'ERROR: {}'.format(x)
+                        print error_dict[x]
+                    print 'Account not deleted!'
             except:
                 print 'Unable to communicate with server'
+                print 'Account not deleted!'
     else:
         print 'Passwords did not match!'
-        return False
-    print 'Account not deleted!'
+        print 'Account not deleted!'
     return False
 
 
@@ -164,14 +177,29 @@ def add(command,target,flags,value):
     elif not value:
         value = None
     if target == 'topic':
-        headline = raw_input('Provide the name of the topic: ')
+        headline = raw_input('Topic name: ')
     elif target == 'post':
-        headline = raw_input('Provide a headline (optional): ')
-
+        headline = raw_input('Headline / Title: ')
+        while len(headline) > 81 or len(headline) < 5:
+            print '\nHeadline must be between 5 and 81 characters!\n'
+            headline = raw_input('Headline / Title: ')
     if target == 'reply':
         description = raw_input('Provide the content of the reply: ')
+    elif target == 'post':
+        EDITOR = os.environ.get('EDITOR', 'vim')
+        initial_message = "Delete this text and enter your post text..."
+
+        with tempfile.NamedTemporaryFile(suffix=".tmp") as tmp:
+            tmp.write(initial_message)
+            tmp.flush()
+            call([EDITOR, tmp.name])
+            tmp.seek(0)
+            description = tmp.read()
     else:
-        description = raw_input('Provide a description of this {} (optional): '.format(target))
+        description = raw_input('{} description: '.format(target))
+        while len(description) > 40 or len(description) < 5:
+            print '\n{} descriptions must be between 5 and 40 characters long!\n'.format(target)
+            description = raw_input('{} description: '.format(target))
     data = {
         'value': value,
         'token': incoming['token'],
@@ -184,8 +212,11 @@ def add(command,target,flags,value):
     }
     try:
         response = make_request(command,target,data)
-        for x in response['messages']:
-            print x
+        if response['success']:
+            print 'Your {} has been added!'.format(target)
+        else:
+            for x in response['errors']:
+                print error_dict[x]
     except:
         print 'Unable to communicate with server'
 
@@ -216,17 +247,19 @@ def list_api(command,target,flags,value):
     try:
         response = make_request(command,target,data)
         if response['success']:
-            print '--- [RESPONSE] >>>>>>\n'
+            print 'oBB --- [RESPONSE] >>>>>>\n'
             for x in response['rows']:
                 spaces = u' ' * (20 - len(x['headline']))
                 if target == 'board':
                     print x['headline'] + spaces + x['body']
+                elif target == 'topic':
+                    print 'ID: ' + str(x['id']) + ' // ' + x['headline'] + ' // ' + x['body']
                 else:
-                    print 'ID: ' + str(x['id']) + '\n' + x['headline'] + '\n' + x['body'] + '\n'
+                    print 'ID: ' + str(x['id']) + ' // ' + x['headline'] + ' // By: ' + x['creator']
             print '\n'
         else:
             for x in response['errors']:
-                print x
+                print error_dict[x]
     except:
         print 'Unable to communicate with server'
 
