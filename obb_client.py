@@ -92,7 +92,7 @@ def validate_args(arg_list):
 def log_on(command,target,flags,value):
     username = raw_input('Enter your username: ')
     pw = getpass.getpass('Enter your password: ')
-    data = {'username': username, 'password': pw}
+    data = {'user': username, 'password': pw}
     try:
         response = make_request('logon',None,data)
         if response['success']:
@@ -109,12 +109,16 @@ def log_on(command,target,flags,value):
 
 
 def log_off(command,target,flags,value):
-    data = {'username': incoming['user'], 'token':incoming['token']}
+    data = {'user': incoming['user'], 'token':incoming['token']}
     try:
         response = make_request('logoff', None, data)
         if response['success']:
-            print '\n{} has been logged off...\n'.format(data['username'])
-
+            print '\n{} has been logged off...\n'.format(data['user'])
+            incoming['user'] = ''
+            incoming['board'] = None
+            incoming['topic'] = None
+            incoming['post'] = None
+            incoming['token'] = None
         else:
             for x in response['errors']:
                 print error_dict[x]
@@ -134,7 +138,7 @@ def join(command,target,flags,value):
     bio = raw_input('Enter a short bio (optional): ')
     contact = raw_input('Enter contact information (optional): ')
     url = raw_input('Enter a URL for yourself (optional): ')
-    data = {'username': username,'password': password, 'bio': bio, 'contact': contact,'url': url}
+    data = {'user': username,'password': password, 'bio': bio, 'contact': contact,'url': url}
     try:
         response = make_request('join',None,data)
         if response['success']:
@@ -152,7 +156,7 @@ def delete_user(command,target,flags,value):
     if password == repass:
         verify = raw_input('Are you sure? This cannot be undone (y/n): ')
         if verify.lower() in ['y','yes','yeah','yup','ya']:
-            data = {'username': username,'password':password}
+            data = {'user': username,'password':password}
             try:
                 response = make_request('delete',None,data)
                 if response['success']:
@@ -345,7 +349,7 @@ if __name__ == '__main__':
             data = {
                 'remote_root': 'http://localhost:8080',
                 'token': '',
-                'username': '',
+                'user': '',
                 'board': None,
                 'topic': None,
                 'post': None
