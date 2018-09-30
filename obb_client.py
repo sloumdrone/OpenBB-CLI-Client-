@@ -249,9 +249,14 @@ def list_api(command,target,flags,value):
 
     }
     try:
-        response = make_request(command,target,data)
+        response = make_request(command, target, data)
+        print 'oBB --- [RESPONSE] >>>>>>\n'
         if response['success']:
-            print 'oBB --- [RESPONSE] >>>>>>\n'
+            if target != 'board':
+                print 'Board: {}\n'.format(incoming['board'])
+            elif target == 'post':
+                print 'Topic: {}'.format(incoming['topic_hl'])
+
             for x in response['rows']:
                 spaces = u' ' * (20 - len(x['headline']))
                 if target == 'board':
@@ -267,8 +272,51 @@ def list_api(command,target,flags,value):
     except:
         print 'Unable to communicate with server'
 
+def view(command, target, flags, value):
+    if not incoming['board']:
+        print 'No board is set for the current user'
+        return False
+    if target == 'post' and not incoming['topic']:
+        print 'No topic is set for the current user'
+    data = {
+        'value': value,
+        'token': incoming['token'],
+        'user': incoming['user'],
+        'body': None,
+        'headline': None,
+        'board': incoming['board'],
+        'topic': incoming['topic'],
+        'post': incoming['post']
+    }
 
-def set_api(command,target,flags,value):
+    try:
+        print 'oBB --- [{}] >>>>>>\n'.format(incoming['board'])
+        response = make_request(command, target, data)
+        if response['success']:
+            print '{}:\n'.format(target)
+            print '{}\nby {} - {}\n\n{}'.format(
+                response['headline'],
+                response['creator'],
+                response['time'],
+                response['body']
+            )
+            if target == 'post':
+                print '\n\nreplies:\n'
+                for x in response['rows']:
+                    if x['time'] and x['creator']:
+                        print '{} - {}'.format(x['creator'], x['time'])
+                    print x['body']
+                    print '\n---\n'
+        else:
+            for x in response['errors']:
+                print error_dict[x]
+    except:
+        print 'Unable to communicate with server'
+
+
+
+
+def set_api(command, target, flags, value):
     if not target:
         print "No target supplied. Nothing set."
         return False
@@ -320,7 +368,7 @@ opts = {
         'flags': ['-h']
     },
     'add': {
-        'target': ['board','topic','post','reply''admin'],
+        'target': ['board','topic','post','reply','admin'],
         'caller': add,
         'flags': ['-h']
     },
@@ -337,6 +385,11 @@ opts = {
     'list': {
         'target': ['board','topic','post'],
         'caller': list_api,
+        'flags': ['-h']
+    },
+    'view': {
+        'target': ['topic','post'],
+        'caller': view,
         'flags': ['-h']
     }
 }
