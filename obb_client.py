@@ -175,11 +175,15 @@ def delete_user(command,target,flags,value):
 
 
 def add(command,target,flags,value):
-    headline = None
     if not value and target == 'board':
-        value = raw_input('Please enter the name you would like for the new {}: '.format(target))
+        sure = False
+        while not sure:
+            value = raw_input('Please enter the name you would like for the new {}: '.format(target))
+            check = raw_input('Are you sure you want to create a board named {}? Y/N'.format(value))
+            sure = True if check.lower() in ['y','yes','yeah','yup'] else False
     elif not value:
         value = None
+
     if target == 'topic':
         headline = raw_input('Topic name: ')
     elif target == 'post':
@@ -187,11 +191,12 @@ def add(command,target,flags,value):
         while len(headline) > 81 or len(headline) < 5:
             print '\nHeadline must be between 5 and 81 characters!\n'
             headline = raw_input('Headline / Title: ')
-    if target == 'reply':
-        description = raw_input('Provide the content of the reply: ')
-    elif target == 'post':
+    else:
+        headline = None
+
+    if target == 'post' or target == 'reply':
         EDITOR = os.environ.get('EDITOR', 'vim')
-        initial_message = "Delete this text and enter your post text..."
+        initial_message = "Delete this and enter your message..."
 
         with tempfile.NamedTemporaryFile(suffix=".tmp") as tmp:
             tmp.write(initial_message)
@@ -301,12 +306,12 @@ def view(command, target, flags, value):
                 response['body']
             )
             if target == 'post':
-                print '\n\nreplies:\n'
+                print '\n\n*---------*\n| replies |---------->>\n*---------*\n'
                 for x in response['rows']:
                     if x['time'] and x['creator']:
                         print '{} - {}'.format(x['creator'], x['time'])
                     print x['body']
-                    print '\n---\n'
+                    print '---\n'
         else:
             for x in response['errors']:
                 print error_dict[x]
