@@ -1,8 +1,10 @@
 import os.path, json, urllib2, sys
 import os, tempfile
+import datetime
 import getpass
 from subprocess import call
 
+time_fmt = '%b %d %Y %-I:%M%p'
 udata = './u.conf.json'
 incoming = ''
 error_dict = {
@@ -255,7 +257,7 @@ def list_api(command,target,flags,value):
     }
     try:
         response = make_request(command, target, data)
-        print 'oBB --- [RESPONSE] >>>>>>\n'
+        print 'oBB --- [{}s] >>>>>>\n'.format(target)
         if response['success']:
             if target != 'board':
                 print 'Board: {}\n'.format(incoming['board'])
@@ -298,20 +300,26 @@ def view(command, target, flags, value):
         print 'oBB --- [{}] >>>>>>\n'.format(incoming['board'])
         response = make_request(command, target, data)
         if response['success']:
-            print '{}:\n'.format(target)
-            print '{}\nby {} - {}\n\n{}'.format(
+            target_length = len(target)
+            dashes = '-' * (target_length + 2)
+            displaytime = datetime.datetime.fromtimestamp(int(response['time'])).strftime(time_fmt)
+            print '*{}*\n| {} |{}----->>\n*{}*\n'.format(dashes, target, dashes, dashes)
+            print '{}\nby {} // {}\n\n{}\n'.format(
                 response['headline'],
                 response['creator'],
-                response['time'],
+                displaytime,
                 response['body']
             )
             if target == 'post':
-                print '\n\n*---------*\n| replies |---------->>\n*---------*\n'
+                print '\n*---------*\n| replies |---------->>\n*---------*\n'
                 for x in response['rows']:
                     if x['time'] and x['creator']:
-                        print '{} - {}'.format(x['creator'], x['time'])
-                    print x['body']
-                    print '---\n'
+                        displaytime = datetime.datetime.fromtimestamp(int(x['time'])).strftime(time_fmt)
+                        print '{} // {}\n'.format(x['creator'], displaytime)
+                        print x['body']
+                        print '---\n'
+                if len(response['rows']):
+                    print 'There are no replies yet...\n\n---\n'
         else:
             for x in response['errors']:
                 print error_dict[x]
